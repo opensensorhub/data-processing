@@ -3,16 +3,16 @@
    <parent>
       <groupId>org.sensorhub</groupId>
       <artifactId>sensorhub-all</artifactId>
-      <version>1.1-SNAPSHOT</version>
+      <version>1.1-beta1</version>
    </parent>
-   <artifactId>sensorhub-process-all</artifactId>
-   <name>SensorHub Processing Base POM</name>
+   <artifactId>osh-processing-base</artifactId>
+   <name>OSH Processing Base POM</name>
    <packaging>pom</packaging>
    <organization/>
    <scm>
       <url>https://github.com/opensensorhub/osh-processing/tree/master</url>
       <connection>scm:git:https://github.com/opensensorhub/osh-processing.git</connection>
-      <developerConnection>scm:git:https://github.com/opensensorhub/osh-processing.git</developerConnection>
+      <developerConnection>scm:git:git@github.com:opensensorhub/osh-processing.git</developerConnection>
       <tag>HEAD</tag>
    </scm>
    <issueManagement>
