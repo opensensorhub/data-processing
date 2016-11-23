@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>sensorhub-process-basicmath</name>
-	<comment>Project sensorhub-process-basicmath created by Buildship.</comment>
+	<name>osh-processing</name>
+	<comment>Project osh-processing created by Buildship.</comment>
 	<projects>
 	</projects>
 	<buildSpec>
