@@ -21,9 +21,8 @@ import org.sensorhub.algo.geoloc.Ellipsoid;
 import org.sensorhub.algo.geoloc.GeoTransforms;
 import org.sensorhub.algo.geoloc.SRTMUtil;
 import org.sensorhub.algo.vecmath.Vect3d;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.vast.process.SMLException;
+import org.sensorhub.api.processing.OSHProcessInfo;
+import org.vast.process.ProcessException;
 import org.vast.swe.SWEHelper;
 
 
@@ -37,10 +36,10 @@ import org.vast.swe.SWEHelper;
  * @author Alex Robin <alex.robin@sensiasoftware.com>
  * @since Nov 13, 2015
  */
-public class RayIntersectTerrain_Process extends RayIntersectEllipsoid_Process
+public class RayIntersectTerrain extends RayIntersectEllipsoid
 {
-    private Logger log = LoggerFactory.getLogger(RayIntersectTerrain_Process.class);
-
+    public static final OSHProcessInfo INFO = new OSHProcessInfo("RayIntersectTerrain", "Ray Terrain Intersection", "Compute 3D intersection between a ray and a terrain model", RayIntersectSphere.class);
+    
     private Text srtmDataPath;
     private GeoTransforms transforms;
     private SRTMUtil util;
@@ -48,10 +47,10 @@ public class RayIntersectTerrain_Process extends RayIntersectEllipsoid_Process
     private double initAlti;
     
 
-    public RayIntersectTerrain_Process()
+    public RayIntersectTerrain()
     {
-        super();
-        
+        super(INFO);
+                
         // change parameters
         srtmDataPath = new SWEHelper().newText(null, "SRTM Data Path", "Local absolute path to SRTM data folder");
         srtmDataPath.assignNewDataBlock();
@@ -60,7 +59,7 @@ public class RayIntersectTerrain_Process extends RayIntersectEllipsoid_Process
     
     
     @Override
-    public void init() throws SMLException
+    public void init() throws ProcessException
     {
         super.init();
         
@@ -77,7 +76,7 @@ public class RayIntersectTerrain_Process extends RayIntersectEllipsoid_Process
     
     
     @Override
-    public void execute() throws SMLException
+    public void execute() throws ProcessException
     {
         double altitude = initAlti;
         double error = 0.0;
@@ -105,7 +104,7 @@ public class RayIntersectTerrain_Process extends RayIntersectEllipsoid_Process
                 boolean ok = rie.computeIntersection(origin, dir, intersect);
                 if (!ok)
                 {
-                    log.debug("No intersection found");
+                    getLogger().debug("No intersection found");
                     break;
                 }
                 
@@ -118,7 +117,7 @@ public class RayIntersectTerrain_Process extends RayIntersectEllipsoid_Process
         }
         catch (IOException e)
         {
-            throw new SMLException("Error while looking up altitude from SRTM DEM data", e);
+            throw new ProcessException("Error while looking up altitude from SRTM DEM data", e);
         }
     	
         // assign new values to intersection point output

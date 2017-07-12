@@ -17,58 +17,61 @@ package org.sensorhub.process.geoloc;
 import net.opengis.swe.v20.DataBlock;
 import net.opengis.swe.v20.Quantity;
 import net.opengis.swe.v20.Vector;
-import org.sensorhub.algo.geoloc.Ellipsoid;
-import org.sensorhub.algo.geoloc.RayIntersectEllipsoid;
+import org.sensorhub.algo.geoloc.EllipsoidIntersect;
 import org.sensorhub.algo.vecmath.Vect3d;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.vast.process.SMLException;
-import org.vast.sensorML.ExecutableProcessImpl;
+import org.sensorhub.api.processing.OSHProcessInfo;
+import org.vast.process.ExecutableProcessImpl;
+import org.vast.process.ProcessException;
 import org.vast.swe.SWEConstants;
+import org.vast.swe.SWEHelper;
 import org.vast.swe.helper.GeoPosHelper;
 
 
 /**
  * <p>
- * Computes intersection of a 3D ray with an ellipsoid which axes are
+ * Computes intersection of a 3D ray with a sphere which axes are
  * aligned with the axes of the referential of the ray. This process outputs
- * coordinates of the intersect point expressed in the same frame (e.g. ECEF).
- * <br/>This version allows for height adjustment which means that the
- * intersection is computed with a virtual ellipsoid that can be above or
- * below the reference WGS84 ellipsoid.
+ * coordinates of the intersect point expressed in the same frame.
  * </p>
- *
+
  * @author Alex Robin <alex.robin@sensiasoftware.com>
  * @since Nov 13, 2015
  */
-public class RayIntersectEllipsoid_Process extends ExecutableProcessImpl
+public class RayIntersectSphere extends ExecutableProcessImpl
 {
-    private Logger log = LoggerFactory.getLogger(RayIntersectEllipsoid_Process.class);
+    public static final OSHProcessInfo INFO = new OSHProcessInfo("RayIntersectSphere", "Ray Sphere Intersection", "Compute 3D intersection between a ray and a sphere", RayIntersectSphere.class);
     
-    protected Vector rayOrigin, rayDirection, intersection;
-    protected Quantity heightAdjustment;
-    protected RayIntersectEllipsoid rie;
-    protected Vect3d origin, dir, intersect;
+    protected Vector rayOrigin;
+    protected Vector rayDirection;
+    protected Vector intersection;
+    private Quantity sphereRadius;
+    private EllipsoidIntersect rie;
+    protected Vect3d origin;
+    protected Vect3d dir;
+    protected Vect3d intersect;
+    private double radius;
     
 
-    public RayIntersectEllipsoid_Process()
+    public RayIntersectSphere()
     {
+        super(INFO);
         GeoPosHelper sweHelper = new GeoPosHelper();
         
         //// INPUTS ////
-        // ray origin in reference frame (ECEF by default)
-        rayOrigin = sweHelper.newLocationVectorECEF(null);
+        // ray origin in reference frame
+        rayOrigin = sweHelper.newLocationVectorXYZ(null, SWEConstants.NIL_UNKNOWN, "m");
         inputData.add("rayOrigin", rayOrigin);
         
-        // ray direction in reference frame (ECEF by default)
-        rayDirection = sweHelper.newUnitVectorXYZ(null, SWEConstants.REF_FRAME_ECEF);
+        // ray direction in reference frame
+        rayDirection = sweHelper.newLocationVectorXYZ(null, SWEConstants.NIL_UNKNOWN, "1");
         inputData.add("rayDirection", rayDirection);
         
         //// PARAMETERS ////
-        heightAdjustment = sweHelper.newQuantity(null, "Ellipsoid Height Adjustment", "Ellipsoid height offset used when computing the intersection", "m");
-        heightAdjustment.assignNewDataBlock();
-        paramData.add("heightAdjustment", heightAdjustment);
-                
+        // sphere radius
+        sphereRadius = sweHelper.newQuantity(SWEHelper.getPropertyUri("Radius"), "Sphere Radius", null, "m");
+        sphereRadius.createDataBlock();
+        paramData.add("sphereRadius", sphereRadius);        
+        
         //// OUTPUTS ////
         intersection = sweHelper.newLocationVectorECEF(null);
         outputData.add("intersection", intersection);
@@ -76,20 +79,21 @@ public class RayIntersectEllipsoid_Process extends ExecutableProcessImpl
 
     
     @Override
-    public void init() throws SMLException
+    public void init() throws ProcessException
     {
+        super.init();
+        
         this.origin = new Vect3d();
         this.dir = new Vect3d();
         this.intersect = new Vect3d();
         
         // instantiate ellipsoid intersection algorithm
-        double heightOffset = heightAdjustment.getData().getDoubleValue();
-        this.rie = new RayIntersectEllipsoid(Ellipsoid.WGS84, heightOffset);
+        rie = new EllipsoidIntersect(radius, radius, radius);
     }
     
     
     @Override
-    public void execute() throws SMLException
+    public void execute() throws ProcessException
     {
         // get ray origin input
         DataBlock originData = rayOrigin.getData();
@@ -105,7 +109,7 @@ public class RayIntersectEllipsoid_Process extends ExecutableProcessImpl
         
         boolean ok = rie.computeIntersection(origin, dir, intersect);
         if (!ok)
-            log.debug("No intersection found");
+            getLogger().debug("No intersection found");
         
         // set intersection point output
         DataBlock intersectData = intersection.getData();

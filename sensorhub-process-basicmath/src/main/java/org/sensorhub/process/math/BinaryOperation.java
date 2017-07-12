@@ -18,8 +18,9 @@ import java.util.Arrays;
 import net.opengis.swe.v20.AllowedTokens;
 import net.opengis.swe.v20.Quantity;
 import net.opengis.swe.v20.Text;
-import org.vast.process.SMLException;
-import org.vast.sensorML.ExecutableProcessImpl;
+import org.sensorhub.api.processing.OSHProcessInfo;
+import org.vast.process.ExecutableProcessImpl;
+import org.vast.process.ProcessException;
 import org.vast.swe.SWEConstants;
 import org.vast.swe.SWEHelper;
 
@@ -33,23 +34,27 @@ import org.vast.swe.SWEHelper;
  * @author Alexandre Robin & Gregoire Berthiau
  * @date Mar 7, 2007
  */
-public class BinaryOperation_Process extends ExecutableProcessImpl
+public class BinaryOperation extends ExecutableProcessImpl
 {
-	private Quantity operand1, operand2, result;
+	public static final OSHProcessInfo INFO = new OSHProcessInfo("binaryOp", "Binary Operation", null, BinaryOperation.class);
+    private Quantity operand1;
+    private Quantity operand2;
+    private Quantity result;
 	private Text operator;
 	private OperatorEnum op;
     enum OperatorEnum {ADD, SUB, MUL, DIV, POW}
     
     
-    public BinaryOperation_Process()
+    public BinaryOperation()
     {
-    	SWEHelper sweHelper = new SWEHelper();
+    	super(INFO);
+        SWEHelper sweHelper = new SWEHelper();
     	
     	// inputs
-        operand1 = sweHelper.newQuantity(SWEConstants.NIL_TEMPLATE, "Operand1", null, "1");
+        operand1 = sweHelper.newQuantity(SWEConstants.DEF_DN, "Operand1", null, SWEConstants.UOM_ANY);
         inputData.add("operand1", operand1);
         
-        operand2 = sweHelper.newQuantity(SWEConstants.NIL_TEMPLATE, "Operand2", null, "1");
+        operand2 = sweHelper.newQuantity(SWEConstants.DEF_DN, "Operand2", null, SWEConstants.UOM_ANY);
         inputData.add("operand2", operand2);
         
         // parameters
@@ -62,28 +67,30 @@ public class BinaryOperation_Process extends ExecutableProcessImpl
         paramData.add("operator", operator);
         
         // outputs
-        result = sweHelper.newQuantity(SWEConstants.NIL_TEMPLATE, "Result", null, "1");
+        result = sweHelper.newQuantity(SWEConstants.DEF_DN, "Result", null, SWEConstants.UOM_ANY);
         outputData.add("result", result);
     }
 
     
     @Override
-    public void init() throws SMLException
+    public void init() throws ProcessException
     {
+        super.init();
+        
         // read operator
         try
         {
             op = OperatorEnum.valueOf(operator.getData().getStringValue());
         }
-        catch (Exception e)
+        catch (IllegalArgumentException e)
         {
-            throw new SMLException("Invalid operator. Must be one of " + Arrays.toString(OperatorEnum.values()));
+            throw new ProcessException("Invalid operator. Must be one of " + Arrays.toString(OperatorEnum.values()), e);
         }
     }
     
 
     @Override
-    public void execute() throws SMLException
+    public void execute() throws ProcessException
     {
         double N1 = operand1.getData().getDoubleValue();
         double N2 = operand2.getData().getDoubleValue();

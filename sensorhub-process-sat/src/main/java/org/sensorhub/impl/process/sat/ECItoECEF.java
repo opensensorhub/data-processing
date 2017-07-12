@@ -20,49 +20,54 @@ import net.opengis.swe.v20.Vector;
 import org.sensorhub.algo.geoloc.Ellipsoid;
 import org.sensorhub.algo.geoloc.GeoTransforms;
 import org.sensorhub.algo.vecmath.Vect3d;
-import org.vast.process.SMLException;
-import org.vast.sensorML.ExecutableProcessImpl;
+import org.sensorhub.api.processing.OSHProcessInfo;
+import org.vast.process.ExecutableProcessImpl;
+import org.vast.process.ProcessException;
 import org.vast.swe.SWEConstants;
 import org.vast.swe.helper.GeoPosHelper;
 
 
 /**
  * <p>
- * Converts ECEF (4978) to ECI coordinates
+ * Converts ECI to ECEF (4978) ECI coordinates
  * </p>
  * 
  * @author Alex Robin <alex.robin@sensiasoftware.com>
  * @date Sep 2, 2015
  */
-public class ECEFtoECI_Process extends ExecutableProcessImpl
+public class ECItoECEF extends ExecutableProcessImpl
 {
-    Vector ecefLoc, eciLoc;
+    public static final OSHProcessInfo INFO = new OSHProcessInfo("ECI2ECEF", "ECI to ECEF", "ECI to ECEF coordinates conversion", ECItoECEF.class);
+    Vector eciLoc;
+    Vector ecefLoc;
     Time utcTime;
-    private GeoTransforms transforms;
-    private Vect3d ecef, eci;
+    GeoTransforms transforms;
+    Vect3d ecef;
+    Vect3d eci;
     
 
-    public ECEFtoECI_Process()
+    public ECItoECEF()
     {
+        super(INFO);
         GeoPosHelper sweHelper = new GeoPosHelper();
         
-        // create ECEF input
-        ecefLoc = sweHelper.newLocationVectorECEF(null);
-        inputData.add("ecefLoc", ecefLoc);
+        // create ECI input
+        eciLoc = sweHelper.newLocationVectorECEF(null);
+        eciLoc.setReferenceFrame(SWEConstants.REF_FRAME_ECI_J2000);
+        inputData.add("eciLoc", eciLoc);
         
         // create time input
         utcTime = sweHelper.newTimeStampIsoUTC();
         inputData.add(utcTime);
         
-        // create ECI output
-        eciLoc = sweHelper.newLocationVectorECEF(null);
-        eciLoc.setReferenceFrame(SWEConstants.REF_FRAME_ECI_J2000);
-        outputData.add("eciLoc", eciLoc);
+        // create ECEFoutput
+        ecefLoc = sweHelper.newLocationVectorECEF(null);
+        outputData.add("ecefLoc", ecefLoc);
     }
 
 
     @Override
-    public void init() throws SMLException
+    public void init() throws ProcessException
     {
         transforms = new GeoTransforms(Ellipsoid.WGS84);
         ecef = new Vect3d();
@@ -71,20 +76,20 @@ public class ECEFtoECI_Process extends ExecutableProcessImpl
 
 
     @Override
-    public void execute() throws SMLException
+    public void execute() throws ProcessException
     {
         double time = utcTime.getData().getDoubleValue(); 
                 
-        DataBlock ecefData = ecefLoc.getData();
-        ecef.x = ecefData.getDoubleValue(0);
-        ecef.y = ecefData.getDoubleValue(1);
-        ecef.z = ecefData.getDoubleValue(2);
-        
-        transforms.ECEFtoECI(time, ecef, eci, false);
-        
         DataBlock eciData = eciLoc.getData();
-        eciData.setDoubleValue(0, eci.x);
-        eciData.setDoubleValue(1, eci.y);        
-        eciData.setDoubleValue(2, eci.z);
+        eci.x = eciData.getDoubleValue(0);
+        eci.y = eciData.getDoubleValue(1);        
+        eci.z = eciData.getDoubleValue(2);
+                
+        transforms.ECItoECEF(time, eci, ecef, false);
+        
+        DataBlock ecefData = ecefLoc.getData();
+        ecefData.setDoubleValue(0, ecef.x);
+        ecefData.setDoubleValue(1, ecef.y);
+        ecefData.setDoubleValue(2, ecef.z);
     }
 }

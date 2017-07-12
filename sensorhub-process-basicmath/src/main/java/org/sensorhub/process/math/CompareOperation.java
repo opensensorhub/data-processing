@@ -19,8 +19,9 @@ import net.opengis.swe.v20.AllowedTokens;
 import net.opengis.swe.v20.Boolean;
 import net.opengis.swe.v20.Quantity;
 import net.opengis.swe.v20.Text;
-import org.vast.process.SMLException;
-import org.vast.sensorML.ExecutableProcessImpl;
+import org.sensorhub.api.processing.OSHProcessInfo;
+import org.vast.process.ExecutableProcessImpl;
+import org.vast.process.ProcessException;
 import org.vast.swe.SWEConstants;
 import org.vast.swe.SWEHelper;
 
@@ -35,23 +36,25 @@ import org.vast.swe.SWEHelper;
  * @author Alex Robin <alex.robin@sensiasoftware.com>
  * @since Nov 13, 2015
  */
-public class CompareOperation_Process extends ExecutableProcessImpl
+public class CompareOperation extends ExecutableProcessImpl
 {
-	private Quantity value, threshold, outputIfTrue, outputIfFalse;
+    public static final OSHProcessInfo INFO = new OSHProcessInfo("compareOp", "Comparison Operation", null, CompareOperation.class);
+    private Quantity value, threshold, outputIfTrue, outputIfFalse;
 	private Boolean result;
 	private Text operator;
 	private OperatorEnum op;
     enum OperatorEnum {GreaterThan, LowerThan, GreaterOrEqual, LowerOrEqual}
     
     
-    public CompareOperation_Process()
+    public CompareOperation()
     {
-    	SWEHelper sweHelper = new SWEHelper();
+    	super(INFO);
+        SWEHelper sweHelper = new SWEHelper();
     	
     	// inputs
-    	value = sweHelper.newQuantity(SWEConstants.NIL_TEMPLATE, "Value", null, "1");
+    	value = sweHelper.newQuantity(SWEConstants.DEF_DN, "Value", null, SWEConstants.UOM_ANY);
         inputData.add("value", value);        
-        threshold = sweHelper.newQuantity(SWEConstants.NIL_TEMPLATE, "Threshold", null, "1");
+        threshold = sweHelper.newQuantity(SWEConstants.DEF_DN, "Threshold", null, SWEConstants.UOM_ANY);
         inputData.add("threshold", threshold);
         
         // parameters
@@ -64,32 +67,34 @@ public class CompareOperation_Process extends ExecutableProcessImpl
         paramData.add("operator", operator);
         
         // outputs
-        result = sweHelper.newBoolean(SWEConstants.NIL_TEMPLATE, "Comparison Result", null);
+        result = sweHelper.newBoolean(SWEConstants.DEF_FLAG, "Comparison Result", null);
         outputData.add("result", result);
-        outputIfTrue = sweHelper.newQuantity(SWEConstants.NIL_TEMPLATE, "True Output", null, "1");
+        outputIfTrue = sweHelper.newQuantity(SWEConstants.DEF_DN, "True Output", null, SWEConstants.UOM_ANY);
         outputData.add("outputIfTrue", outputIfTrue);
-        outputIfFalse = sweHelper.newQuantity(SWEConstants.NIL_TEMPLATE, "False Output", null, "1");
+        outputIfFalse = sweHelper.newQuantity(SWEConstants.DEF_DN, "False Output", null, SWEConstants.UOM_ANY);
         outputData.add("outputIfFalse", outputIfFalse);
     }
 
     
     @Override
-    public void init() throws SMLException
+    public void init() throws ProcessException
     {
+        super.init();
+        
         // read operator
         try
         {
             op = OperatorEnum.valueOf(operator.getData().getStringValue());
         }
-        catch (Exception e)
+        catch (IllegalArgumentException e)
         {
-            throw new SMLException("Invalid operator. Must be one of " + Arrays.toString(OperatorEnum.values()));
+            throw new ProcessException("Invalid operator. Must be one of " + Arrays.toString(OperatorEnum.values()), e);
         }
     }
     
 
     @Override
-    public void execute() throws SMLException
+    public void execute() throws ProcessException
     {
         double val = value.getData().getDoubleValue();
         double thresh = threshold.getData().getDoubleValue();

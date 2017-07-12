@@ -24,9 +24,10 @@ import org.sensorhub.algo.vecmath.Mat3d;
 import org.sensorhub.algo.vecmath.Mat4d;
 import org.sensorhub.algo.vecmath.Quat4d;
 import org.sensorhub.algo.vecmath.Vect3d;
+import org.sensorhub.api.processing.OSHProcessInfo;
 import org.sensorhub.process.vecmath.VecMathHelper;
-import org.vast.process.SMLException;
-import org.vast.sensorML.ExecutableProcessImpl;
+import org.vast.process.ExecutableProcessImpl;
+import org.vast.process.ProcessException;
 import org.vast.swe.SWEConstants;
 import org.vast.swe.helper.GeoPosHelper;
 
@@ -34,28 +35,37 @@ import org.vast.swe.helper.GeoPosHelper;
 /**
  * <p>
  * Generates the 4x4 homogeneous and 3x3 rotation matrices allowing
- * to transform from local (sensor) coordinates to ECEF coordinates. 
+ * to transform from local (sensor) coordinates to ECEF coordinates.
  * </p>
  *
  * @author Alex Robin <alex.robin@sensiasoftware.com>
  * @date Nov 13, 2015
  */
-public class ECEFPositionMatrix_Process extends ExecutableProcessImpl
+public class ECEFPosMatrix extends ExecutableProcessImpl
 {
-    private Vector platformLoc, platformAtt;
-    private Vector mountLoc, mountOrient;
-    private Matrix rotMatrix, posMatrix;
+    public static final OSHProcessInfo INFO = new OSHProcessInfo("ECEFPos", "ECEF Matrix", "Compute ECEF position matrix from ECEF location and local orientation", ECEFPosMatrix.class);
+    private Vector platformLoc;
+    private Vector platformAtt;
+    private Vector mountLoc;
+    private Vector mountOrient;
+    private Matrix rotMatrix;
+    private Matrix posMatrix;
     private GeoTransforms transforms;
     private NadirPointing pointing;
-    private boolean isEnu, isLatLon;
-    private Vect3d locEcefPlat, locPlatMount;
+    private boolean isEnu;
+    private boolean isLatLon;
+    private Vect3d locEcefPlat;
+    private Vect3d locPlatMount;
     private Quat4d att;
-    private Mat3d rotEcefEnu, rotEnuPlat, rotPlatMount;
+    private Mat3d rotEcefEnu;
+    private Mat3d rotEnuPlat;
+    private Mat3d rotPlatMount;
     private Mat4d posMat;
     
 
-    public ECEFPositionMatrix_Process()
+    public ECEFPosMatrix()
     {
+        super(INFO);
         GeoPosHelper geoHelper = new GeoPosHelper();
         
         //// INPUTS ////
@@ -94,8 +104,10 @@ public class ECEFPositionMatrix_Process extends ExecutableProcessImpl
     }
 
     
-    public void init() throws SMLException
+    public void init() throws ProcessException
     {
+        super.init();
+        
         transforms = new GeoTransforms(Ellipsoid.WGS84);
         pointing = new NadirPointing(transforms);
         locEcefPlat = new Vect3d();
@@ -125,7 +137,7 @@ public class ECEFPositionMatrix_Process extends ExecutableProcessImpl
     // this would enable overriding ENU to NED and ECEF to LLA
    
     
-    public void execute() throws SMLException
+    public void execute() throws ProcessException
     {
         DataBlock locData = platformLoc.getData();
         locEcefPlat.x = locData.getDoubleValue(0);

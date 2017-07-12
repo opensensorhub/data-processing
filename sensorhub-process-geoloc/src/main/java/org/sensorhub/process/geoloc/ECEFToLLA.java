@@ -19,8 +19,9 @@ import net.opengis.swe.v20.Vector;
 import org.sensorhub.algo.geoloc.Ellipsoid;
 import org.sensorhub.algo.geoloc.GeoTransforms;
 import org.sensorhub.algo.vecmath.Vect3d;
-import org.vast.process.SMLException;
-import org.vast.sensorML.ExecutableProcessImpl;
+import org.sensorhub.api.processing.OSHProcessInfo;
+import org.vast.process.ExecutableProcessImpl;
+import org.vast.process.ProcessException;
 import org.vast.swe.helper.GeoPosHelper;
 
 
@@ -32,15 +33,19 @@ import org.vast.swe.helper.GeoPosHelper;
  * @author Alex Robin <alex.robin@sensiasoftware.com>
  * @since Sep 2, 2015
  */
-public class ECEFToLLA_Process extends ExecutableProcessImpl
+public class ECEFToLLA extends ExecutableProcessImpl
 {
-    private Vector ecefLoc, llaLoc;
+    public static final OSHProcessInfo INFO = new OSHProcessInfo("ECEF2LLA", "ECEF to LLA", "ECEF to geographic coordinates conversion", ECEFToLLA.class);
+    private Vector ecefLoc;
+    private Vector llaLoc;
     private GeoTransforms transforms;
-    private Vect3d ecef, lla;
+    private Vect3d ecef;
+    private Vect3d lla;
 
     
-    public ECEFToLLA_Process()
+    public ECEFToLLA()
     {
+        super(INFO);
         GeoPosHelper sweHelper = new GeoPosHelper();
         
         // create ECEF input
@@ -54,8 +59,9 @@ public class ECEFToLLA_Process extends ExecutableProcessImpl
 
     
     @Override
-    public void init() throws SMLException
+    public void init() throws ProcessException
     {
+        super.init();
         transforms = new GeoTransforms(Ellipsoid.WGS84);
         ecef = new Vect3d();
         lla = new Vect3d();
@@ -63,7 +69,7 @@ public class ECEFToLLA_Process extends ExecutableProcessImpl
    
     
     @Override
-    public void execute() throws SMLException
+    public void execute() throws ProcessException
     {
     	DataBlock ecefData = ecefLoc.getData();
         ecef.x = ecefData.getDoubleValue(0);

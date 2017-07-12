@@ -12,75 +12,71 @@ Copyright (C) 2012-2015 Sensia Software LLC. All Rights Reserved.
  
 ******************************* END LICENSE BLOCK ***************************/
 
-package org.sensorhub.impl.process.sat;
+package org.sensorhub.process.geoloc;
 
 import net.opengis.swe.v20.DataBlock;
-import net.opengis.swe.v20.Time;
 import net.opengis.swe.v20.Vector;
 import org.sensorhub.algo.geoloc.Ellipsoid;
 import org.sensorhub.algo.geoloc.GeoTransforms;
 import org.sensorhub.algo.vecmath.Vect3d;
-import org.vast.process.SMLException;
-import org.vast.sensorML.ExecutableProcessImpl;
-import org.vast.swe.SWEConstants;
+import org.sensorhub.api.processing.OSHProcessInfo;
+import org.vast.process.ExecutableProcessImpl;
+import org.vast.process.ProcessException;
 import org.vast.swe.helper.GeoPosHelper;
 
 
 /**
  * <p>
- * Converts ECI to ECEF (4978) ECI coordinates
+ * Process for converting 3D coordinates from LLA (4979) to ECEF (4978)
  * </p>
- * 
+ *
  * @author Alex Robin <alex.robin@sensiasoftware.com>
- * @date Sep 2, 2015
+ * @since Sep 2, 2015
  */
-public class ECItoECEF_Process extends ExecutableProcessImpl
+public class LLAToECEF extends ExecutableProcessImpl
 {
-    Vector eciLoc, ecefLoc;
-    Time utcTime;
+    public static final OSHProcessInfo INFO = new OSHProcessInfo("LLA2ECEF", "LLA to ECEF", "Geographic to ECEF coordinates conversion", LLAToECEF.class);
+    private Vector ecefLoc;
+    private Vector llaLoc;
     private GeoTransforms transforms;
-    private Vect3d ecef, eci;
-    
+    private Vect3d ecef;
+    private Vect3d lla;
 
-    public ECItoECEF_Process()
+    
+    public LLAToECEF()
     {
+        super(INFO);
         GeoPosHelper sweHelper = new GeoPosHelper();
         
-        // create ECI input
-        eciLoc = sweHelper.newLocationVectorECEF(null);
-        eciLoc.setReferenceFrame(SWEConstants.REF_FRAME_ECI_J2000);
-        inputData.add("eciLoc", eciLoc);
+        // create LLA input
+        llaLoc = sweHelper.newLocationVectorLLA(null);
+        inputData.add("llaLoc", llaLoc);
         
-        // create time input
-        utcTime = sweHelper.newTimeStampIsoUTC();
-        inputData.add(utcTime);
-        
-        // create ECEFoutput
+        // create ECEF output
         ecefLoc = sweHelper.newLocationVectorECEF(null);
         outputData.add("ecefLoc", ecefLoc);
     }
 
-
+    
     @Override
-    public void init() throws SMLException
+    public void init() throws ProcessException
     {
+        super.init();
         transforms = new GeoTransforms(Ellipsoid.WGS84);
         ecef = new Vect3d();
-        eci = new Vect3d();
+        lla = new Vect3d();
     }
-
-
+   
+    
     @Override
-    public void execute() throws SMLException
+    public void execute() throws ProcessException
     {
-        double time = utcTime.getData().getDoubleValue(); 
-                
-        DataBlock eciData = eciLoc.getData();
-        eci.x = eciData.getDoubleValue(0);
-        eci.y = eciData.getDoubleValue(1);        
-        eci.z = eciData.getDoubleValue(2);
-                
-        transforms.ECItoECEF(time, eci, ecef, false);
+        DataBlock llaData = llaLoc.getData();
+        lla.x = Math.toRadians(llaData.getDoubleValue(1));
+        lla.y = Math.toRadians(llaData.getDoubleValue(0));        
+        lla.z = llaData.getDoubleValue(2);
+        
+        transforms.LLAtoECEF(lla, ecef);
         
         DataBlock ecefData = ecefLoc.getData();
         ecefData.setDoubleValue(0, ecef.x);

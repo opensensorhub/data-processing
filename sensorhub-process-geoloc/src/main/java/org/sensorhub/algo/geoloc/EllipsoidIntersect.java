@@ -30,13 +30,13 @@ import org.sensorhub.algo.vecmath.Vect3d;
  * @author Pete Conway, Tony Cook, Alexandre Robin
  * @since 1998
  */
-public class RayIntersectEllipsoid
+public class EllipsoidIntersect
 {
     Ellipsoid datum;
     double rx, ry, rz;
     
         
-    public RayIntersectEllipsoid(double rx, double ry, double rz)
+    public EllipsoidIntersect(double rx, double ry, double rz)
     {
         this.rx = rx;
         this.ry = ry;
@@ -44,13 +44,13 @@ public class RayIntersectEllipsoid
     }
     
     
-	public RayIntersectEllipsoid(Ellipsoid datum)
+	public EllipsoidIntersect(Ellipsoid datum)
 	{
 		this(datum, 0.0);
 	}
 	
 
-	public RayIntersectEllipsoid(Ellipsoid datum, double metersAboveRefEllipsoid)
+	public EllipsoidIntersect(Ellipsoid datum, double metersAboveRefEllipsoid)
 	{
 	    this.datum = datum;
 	    setHeightAdjustment(metersAboveRefEllipsoid);
