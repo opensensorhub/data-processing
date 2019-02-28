@@ -2,6 +2,6 @@
 
 **PLEASE USE THE [OSH-ADDONS REPOSITORY](https://github.com/opensensorhub/osh-addons) FOR ANY NEW WORK.**
 
-# OSH Processind Add-ons
+# OSH Processing Add-ons
 
 Source code for processing building blocks to extend OSH Core
